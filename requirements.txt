@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+sqlmodel
+pydantic
+pytest==7.4.0
+selenium==4.12.0
+httpx
+pytest-xdist
+webdriver-manager

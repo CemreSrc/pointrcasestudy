@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: ${{ github.workspace }}
+    steps:
+      # 1) Check out repo
+      - uses: actions/checkout@v4
+
+      # 2) Python toolchain
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # 3) Install deps (cache pip to speed up)
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # 4) Run API tests (FastAPI)
+      - name: Run API tests
+        run: pytest tests/api -q
+
+      # 5) Prepare browsers for UI tests (multi-browser: Chrome + Firefox)
+      - name: Setup Chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Setup Firefox
+        uses: browser-actions/setup-firefox@v1
+
+      # Cache drivers downloaded by webdriver-manager
+      - name: Cache webdriver-manager drivers
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.wdm
+            ~/.cache/selenium
+          key: ${{ runner.os }}-wdm-${{ hashFiles('tests/ui/**') }}
+          restore-keys: |
+            ${{ runner.os }}-wdm-
+
+      # 6) Run UI tests headless on both browsers
+      - name: Run UI tests (Chrome and Firefox)
+        env:
+          MOZ_HEADLESS: 1
+        run: |
+          pytest tests/ui -q
+
+      # 7) Upload the text file produced by UI test
+      - name: Upload artifact top_words.txt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-artifacts
+          path: artifacts/top_words.txt
+          if-no-files-found: ignore
