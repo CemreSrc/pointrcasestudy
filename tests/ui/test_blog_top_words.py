@@ -1,11 +1,3 @@
-"""UI tests for Pointr blog.
-
-Two tests:
-- test_all_articles_loaded: ensure the blog page shows article content.
-- test_top_words_latest_3_articles: compute and save the 5 most common words
-  across the latest 3 articles to artifacts/top_words.txt.
-"""
-
 import re
 import time
 from collections import Counter
@@ -24,7 +16,6 @@ TOP_WORDS_FILE = ARTIFACTS_DIR / "top_words.txt"
 
 
 def wait_for(condition: Callable[[], bool], timeout: float = 20, interval: float = 0.25) -> bool:
-    """Poll a simple condition function until it returns True or times out."""
     start = time.time()
     while time.time() - start < timeout:
         if condition():
@@ -34,7 +25,6 @@ def wait_for(condition: Callable[[], bool], timeout: float = 20, interval: float
 
 
 def article_links_on_page(browser: WebDriver) -> List[str]:
-    """Return unique article URLs found on the current page, in appearance order."""
     links = browser.find_elements(By.CSS_SELECTOR, "a[href*='/blog/']")
     hrefs: List[str] = []
     for elem in links:
@@ -46,7 +36,6 @@ def article_links_on_page(browser: WebDriver) -> List[str]:
 
 
 def scrape_text(browser: WebDriver) -> str:
-    """Collect visible text from common article containers on the current page."""
     containers = browser.find_elements(
         By.CSS_SELECTOR, "article, main, .post, .single-post, .blog-post, .entry-content"
     )
@@ -54,17 +43,14 @@ def scrape_text(browser: WebDriver) -> str:
 
 
 def tokenize(text: str) -> List[str]:
-    """Split text into word tokens (letters and apostrophes)."""
     return re.findall(r"[A-Za-z']{3,}", text.lower())
 
 
 def compute_top_words(words: Iterable[str], n: int = 5):
-    """Return the n most common words and their counts as a list of (word, count)."""
     return Counter(words).most_common(n)
 
 
 def save_top_words(pairs, path: Path) -> None:
-    """Write (word, count) pairs to a file, one per line as 'word: count'."""
     with path.open("w", encoding="utf-8") as f:
         for w, c in pairs:
             f.write(f"{w}: {c}\n")
